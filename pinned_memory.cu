@@ -3,6 +3,7 @@ This programm is an example of working with pinned memory
 based on summation of two arrays:
 a_i = 1/(i + 1)^2
 b_i = exp(1/(i + 1))
+c_i = sin(sin(a_i * b_i))
 */
 
 #include <stdio.h>
@@ -11,7 +12,7 @@ __global__ void function(float* dA, float* dB, float* dC, int size) {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
   if (idx < size) {
-    dC[idx] = dA[idx] + dB[idx];
+    dC[idx] = sinf(sinf(dA[idx] + dB[idx]));
   }
 }
 
@@ -29,9 +30,15 @@ int main() {
 
   // create arrays on host
   unsigned int mem_size = sizeof(float) * size;
-  hA = (float*) malloc(mem_size);
-  hB = (float*) malloc(mem_size);
-  hC = (float*) malloc(mem_size);
+  // instead of
+  // hA = (float*) malloc(mem_size);
+  // hB = (float*) malloc(mem_size);
+  // hC = (float*) malloc(mem_size);
+  
+  // we will allocate as follows
+  cudaHostAlloc((void**) &hA, mem_size, cudaHostAllocDefault);
+  cudaHostAlloc((void**) &hB, mem_size, cudaHostAllocDefault);
+  cudaHostAlloc((void**) &hC, mem_size, cudaHostAllocDefault);
 
   // create arrays on device
   cudaMalloc((void**) &dA, mem_size);
@@ -79,7 +86,7 @@ int main() {
   cudaEventRecord(start, 0);
 
   for (int i = 0; i < size; i++) {
-    hC[i] = hA[i] + hB[i];
+    hC[i] = sinf(sinf(hA[i] + hB[i]));
   }
 
   cudaEventRecord(stop, 0);
@@ -88,20 +95,31 @@ int main() {
 
   printf("\nCPU time: %f ms\n", timerValueCPU);
   printf("Rate: %f x\n", timerValueCPU / timerValueGPU);
+
+  // memory free on host and device
+  // free(hA);
+  // free(hB);
+  // free(hC);
+  cudaFreeHost(hA);
+  cudaFreeHost(hA);
+  cudaFreeHost(hB);
+
+  cudaFree(dA);
+  cudaFree(dB);
+  cudaFree(dC);
+
+  cudaEventDestroy(start);
+  cudaEventDestroy(stop);
   
   return 0;
 }
 
+// W/o pinned memory:
+// GPU time: 64.865280 ms
+// CPU time: 454.715393 ms
+// Rate: 7.010151 x
 
-
-
-
-
-
-
-
-
-
-
-
-
+// With pinned memory:
+// GPU time: 25.868383 ms
+// CPU time: 461.095520 ms
+// Rate: 17.824675 x
