@@ -27,6 +27,7 @@ int main() {
   cudaError_t err = cudaMemcpy(hArr, dArr, N * sizeof(float), cudaMemcpyDeviceToHost);
   if (err != cudaSuccess) {
     printf("Error: %s\n", cudaGetErrorString(err));
+    return -1;
   }
   for(int idx = 0; idx < 20; idx++) {
     printf("a[%d] = %f\n", idx, hArr[idx]);
