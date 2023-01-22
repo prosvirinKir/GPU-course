@@ -9,7 +9,7 @@ This programm compute y_i = sin(sqrt(x_i)), where x_i = 2*pi*i/N
 __global__ void kernel(float* dArr) {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-  float x_i = 2.0f * 3.1415926f * (float)idx / (float)N;
+  float x_i = 2.0 * 3.1415926 * idx / N;
 
   dArr[idx] = sinf(sqrtf(x_i));
 }
